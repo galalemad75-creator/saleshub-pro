@@ -168,7 +168,7 @@ function ensureDefaultAdmin() {
     }
     // Ensure payment numbers exist
     if (!DB.get('paymentNumbers')) {
-        DB.set('paymentNumbers', { vodafone: '01012345678', instapay: '01012345678' });
+        DB.set('paymentNumbers', { vodafone: '01026500066', instapay: '01026500066' });
     }
 }
 
