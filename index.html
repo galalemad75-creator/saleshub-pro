@@ -5,10 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="SalesHub Pro - نظام احترافي لإدارة ومراقبة مناديب المبيعات | Professional Sales Agent Management System">
     <meta name="robots" content="index, follow">
-    <meta name="keywords" content="sales management, agents, commissions, إدارة مبيعات, مناديب مبيعات">
+    <meta name="keywords" content="sales management, agents, commissions, إدارة مبيعات, مناديب مبيعات, عمولات">
     <meta property="og:title" content="SalesHub Pro - إدارة مناديب المبيعات">
     <meta property="og:description" content="نظام احترافي شامل لإدارة ومراقبة وحساب عمولات مناديب المبيعات">
+    <meta property="og:type" content="website">
     <meta name="theme-color" content="#6C63FF">
+    <meta name="author" content="SalesHub Pro">
+    <meta name="language" content="Arabic, English">
     <title>SalesHub Pro - إدارة مناديب المبيعات</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
@@ -19,104 +22,97 @@
     <!-- Splash Screen -->
     <div id="splash" class="splash">
         <div class="splash-content">
-            <div class="splash-logo">
-                <i class="fas fa-chart-line"></i>
-            </div>
+            <div class="splash-logo"><i class="fas fa-chart-line"></i></div>
             <h1 class="splash-title">SalesHub Pro</h1>
-            <p class="splash-sub">جاري التحميل...</p>
+            <p class="splash-sub" data-ar="جاري التحميل..." data-en="Loading...">جاري التحميل...</p>
             <div class="splash-loader"><div class="loader-bar"></div></div>
         </div>
     </div>
 
-    <!-- App Container -->
+    <!-- App -->
     <div id="app" class="app hidden">
-        <!-- Navigation -->
+        <!-- Nav -->
         <nav id="mainNav" class="nav">
-            <div class="nav-brand">
+            <div class="nav-brand" onclick="navigateTo('auth')">
                 <i class="fas fa-chart-line"></i>
                 <span>SalesHub Pro</span>
             </div>
-            <div class="nav-links" id="navLinks"></div>
+            <div class="nav-links" id="navLinks">
+                <a href="#" data-page="dashboard" onclick="navigateTo('dashboard')" data-ar="لوحة التحكم" data-en="Dashboard">لوحة التحكم</a>
+            </div>
             <div class="nav-actions">
-                <button class="btn-icon" id="langToggle" title="EN/AR">
+                <button class="btn-icon" id="langToggle" title="EN/AR" onclick="toggleLang()">
                     <i class="fas fa-globe"></i>
                 </button>
-                <button class="btn-icon" id="themeToggle" title="الوضع">
+                <button class="btn-icon" id="themeToggle" onclick="toggleTheme()">
                     <i class="fas fa-moon"></i>
                 </button>
-                <button class="btn-icon" id="notifBtn" title="الإشعارات">
+                <button class="btn-icon hidden" id="notifBtn" onclick="toggleNotifs()">
                     <i class="fas fa-bell"></i>
-                    <span class="notif-badge" id="notifBadge">0</span>
+                    <span class="notif-badge hidden" id="notifBadge">0</span>
                 </button>
-                <button class="btn-icon" id="logoutBtn" title="تسجيل الخروج">
+                <button class="btn-icon hidden" id="logoutBtn" onclick="handleLogout()">
                     <i class="fas fa-sign-out-alt"></i>
                 </button>
             </div>
-            <button class="nav-toggle" id="navToggle">
+            <button class="nav-toggle" id="navToggle" onclick="document.getElementById('navLinks').classList.toggle('open')">
                 <i class="fas fa-bars"></i>
             </button>
         </nav>
 
-        <!-- Notification Panel -->
+        <!-- Notifications -->
         <div class="notif-panel hidden" id="notifPanel">
             <div class="notif-header">
-                <h3 id="notifTitle">الإشعارات</h3>
-                <button class="btn-text" id="clearNotifs">مسح الكل</button>
+                <h3 data-ar="الإشعارات" data-en="Notifications">الإشعارات</h3>
+                <button class="btn-text" onclick="clearNotifs()" data-ar="مسح الكل" data-en="Clear All">مسح الكل</button>
             </div>
             <div class="notif-list" id="notifList"></div>
         </div>
 
-        <!-- Pages Container -->
+        <!-- Main -->
         <main class="main-content" id="mainContent">
-            <!-- Auth Pages -->
-            <div id="authPage" class="page">
+
+            <!-- ========== AUTH PAGE ========== -->
+            <div id="page-auth" class="page active">
                 <div class="auth-container">
                     <div class="auth-card">
                         <div class="auth-header">
                             <div class="auth-logo"><i class="fas fa-chart-line"></i></div>
-                            <h1 id="authTitle">تسجيل الدخول</h1>
-                            <p id="authSubtitle">مرحباً بك في SalesHub Pro</p>
+                            <h1 id="authTitle" data-ar="تسجيل الدخول" data-en="Login">تسجيل الدخول</h1>
+                            <p id="authSubtitle" data-ar="مرحباً بك في SalesHub Pro" data-en="Welcome to SalesHub Pro">مرحباً بك في SalesHub Pro</p>
                         </div>
-                        <form id="authForm" class="auth-form">
-                            <!-- Login Fields -->
+                        <form id="authForm" onsubmit="return handleAuth(event)">
+                            <!-- Login -->
                             <div id="loginFields">
                                 <div class="form-group">
-                                    <label for="loginEmail">البريد الإلكتروني</label>
+                                    <label data-ar="البريد الإلكتروني" data-en="Email">البريد الإلكتروني</label>
                                     <div class="input-wrapper">
                                         <i class="fas fa-envelope"></i>
                                         <input type="email" id="loginEmail" placeholder="example@email.com" required>
                                     </div>
                                 </div>
                                 <div class="form-group">
-                                    <label for="loginPass">كلمة المرور</label>
+                                    <label data-ar="كلمة المرور" data-en="Password">كلمة المرور</label>
                                     <div class="input-wrapper">
                                         <i class="fas fa-lock"></i>
                                         <input type="password" id="loginPass" placeholder="••••••••" required>
-                                        <button type="button" class="toggle-pass" onclick="togglePass('loginPass')">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
+                                        <button type="button" class="toggle-pass" onclick="togglePass('loginPass')"><i class="fas fa-eye"></i></button>
                                     </div>
                                 </div>
                             </div>
-                            <!-- Register Fields -->
+                            <!-- Register -->
                             <div id="registerFields" class="hidden">
                                 <div class="form-group">
-                                    <label for="regName">الاسم الكامل</label>
-                                    <div class="input-wrapper">
-                                        <i class="fas fa-user"></i>
-                                        <input type="text" id="regName" placeholder="الاسم الكامل">
-                                    </div>
+                                    <label data-ar="الاسم الكامل" data-en="Full Name">الاسم الكامل</label>
+                                    <div class="input-wrapper"><i class="fas fa-user"></i><input type="text" id="regName" placeholder="الاسم الكامل"></div>
                                 </div>
                                 <div class="form-group">
-                                    <label for="regEmail">البريد الإلكتروني</label>
-                                    <div class="input-wrapper">
-                                        <i class="fas fa-envelope"></i>
-                                        <input type="email" id="regEmail" placeholder="example@email.com">
-                                    </div>
+                                    <label data-ar="البريد الإلكتروني" data-en="Email">البريد الإلكتروني</label>
+                                    <div class="input-wrapper"><i class="fas fa-envelope"></i><input type="email" id="regEmail" placeholder="example@email.com"></div>
                                 </div>
                                 <div class="form-group">
-                                    <label for="regPhone">رقم الموبايل</label>
-                                    <div class="input-wrapper">
+                                    <label data-ar="رقم الموبايل" data-en="Phone">رقم الموبايل</label>
+                                    <div class="input-wrapper phone-wrap">
                                         <i class="fas fa-phone"></i>
                                         <select id="regCountryCode" class="country-select">
                                             <option value="20" data-len="10">🇪🇬 مصر (+20)</option>
@@ -124,10 +120,6 @@
                                             <option value="971" data-len="9">🇦🇪 الإمارات (+971)</option>
                                             <option value="962" data-len="9">🇯🇴 الأردن (+962)</option>
                                             <option value="212" data-len="9">🇲🇦 المغرب (+212)</option>
-                                            <option value="213" data-len="9">🇩🇿 الجزائر (+213)</option>
-                                            <option value="216" data-len="8">🇹🇳 تونس (+216)</option>
-                                            <option value="964" data-len="10">🇮🇶 العراق (+964)</option>
-                                            <option value="961" data-len="8">🇱🇧 لبنان (+961)</option>
                                             <option value="1" data-len="10">🇺🇸 USA (+1)</option>
                                             <option value="44" data-len="10">🇬🇧 UK (+44)</option>
                                         </select>
@@ -135,416 +127,236 @@
                                     </div>
                                 </div>
                                 <div class="form-group">
-                                    <label for="regPass">كلمة المرور</label>
-                                    <div class="input-wrapper">
-                                        <i class="fas fa-lock"></i>
-                                        <input type="password" id="regPass" placeholder="••••••••">
-                                        <button type="button" class="toggle-pass" onclick="togglePass('regPass')">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                    </div>
+                                    <label data-ar="كلمة المرور" data-en="Password">كلمة المرور</label>
+                                    <div class="input-wrapper"><i class="fas fa-lock"></i><input type="password" id="regPass" placeholder="••••••••"><button type="button" class="toggle-pass" onclick="togglePass('regPass')"><i class="fas fa-eye"></i></button></div>
                                 </div>
                                 <div class="form-group">
-                                    <label for="regPassConfirm">تأكيد كلمة المرور</label>
-                                    <div class="input-wrapper">
-                                        <i class="fas fa-lock"></i>
-                                        <input type="password" id="regPassConfirm" placeholder="••••••••">
-                                    </div>
+                                    <label data-ar="تأكيد كلمة المرور" data-en="Confirm Password">تأكيد كلمة المرور</label>
+                                    <div class="input-wrapper"><i class="fas fa-lock"></i><input type="password" id="regPassConfirm" placeholder="••••••••"></div>
                                 </div>
                                 <div class="form-group">
-                                    <label>نوع الحساب</label>
+                                    <label data-ar="نوع الحساب" data-en="Account Type">نوع الحساب</label>
                                     <div class="role-selector">
-                                        <label class="role-option">
-                                            <input type="radio" name="regRole" value="admin" checked>
-                                            <div class="role-card">
-                                                <i class="fas fa-crown"></i>
-                                                <span>مدير (أدمن)</span>
-                                            </div>
-                                        </label>
-                                        <label class="role-option">
-                                            <input type="radio" name="regRole" value="agent">
-                                            <div class="role-card">
-                                                <i class="fas fa-user-tie"></i>
-                                                <span>مندوب مبيعات</span>
-                                            </div>
-                                        </label>
+                                        <label class="role-option"><input type="radio" name="regRole" value="admin" checked onchange="document.getElementById('agencyIdGroup').classList.add('hidden')"><div class="role-card"><i class="fas fa-crown"></i><span data-ar="مدير (أدمن)" data-en="Admin">مدير (أدمن)</span></div></label>
+                                        <label class="role-option"><input type="radio" name="regRole" value="agent" onchange="document.getElementById('agencyIdGroup').classList.remove('hidden')"><div class="role-card"><i class="fas fa-user-tie"></i><span data-ar="مندوب مبيعات" data-en="Sales Agent">مندوب مبيعات</span></div></label>
                                     </div>
                                 </div>
                                 <div class="form-group hidden" id="agencyIdGroup">
-                                    <label for="agencyIdInput">رقم الوكالة</label>
-                                    <div class="input-wrapper">
-                                        <i class="fas fa-building"></i>
-                                        <input type="text" id="agencyIdInput" placeholder="رقم الوكالة من المدير">
-                                    </div>
+                                    <label data-ar="رقم الوكالة" data-en="Agency ID">رقم الوكالة</label>
+                                    <div class="input-wrapper"><i class="fas fa-building"></i><input type="text" id="agencyIdInput" placeholder="رقم الوكالة من المدير"></div>
                                 </div>
                             </div>
-                            <!-- Forgot Password Fields -->
+                            <!-- Forgot -->
                             <div id="forgotFields" class="hidden">
                                 <div class="form-group">
-                                    <label for="forgotEmail">البريد الإلكتروني</label>
-                                    <div class="input-wrapper">
-                                        <i class="fas fa-envelope"></i>
-                                        <input type="email" id="forgotEmail" placeholder="example@email.com">
-                                    </div>
+                                    <label data-ar="البريد الإلكتروني" data-en="Email">البريد الإلكتروني</label>
+                                    <div class="input-wrapper"><i class="fas fa-envelope"></i><input type="email" id="forgotEmail" placeholder="example@email.com"></div>
                                 </div>
-                                <p class="form-hint">سنرسل لك رابط إعادة تعيين كلمة المرور</p>
+                                <p class="form-hint" data-ar="سنرسل لك رابط إعادة تعيين كلمة المرور" data-en="We'll send you a password reset link">سنرسل لك رابط إعادة تعيين كلمة المرور</p>
                             </div>
                             <button type="submit" class="btn btn-primary btn-full" id="authSubmit">
                                 <i class="fas fa-sign-in-alt"></i>
-                                <span id="authBtnText">تسجيل الدخول</span>
+                                <span id="authBtnText" data-ar="تسجيل الدخول" data-en="Login">تسجيل الدخول</span>
                             </button>
                         </form>
                         <div class="auth-footer">
-                            <a href="#" id="toggleAuthMode" class="link">ليس لديك حساب؟ سجل الآن</a>
-                            <a href="#" id="forgotPassLink" class="link">نسيت كلمة المرور؟</a>
+                            <a href="#" onclick="toggleAuthMode('register');return false" id="noAccountLink" class="link" data-ar="ليس لديك حساب؟ سجل الآن" data-en="Don't have an account? Sign up">ليس لديك حساب؟ سجل الآن</a>
+                            <a href="#" onclick="toggleAuthMode('forgot');return false" id="forgotPassLink" class="link" data-ar="نسيت كلمة المرور؟" data-en="Forgot password?">نسيت كلمة المرور؟</a>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Admin Dashboard -->
-            <div id="adminDashboard" class="page hidden">
-                <!-- Stats Cards -->
+            <!-- ========== ADMIN DASHBOARD ========== -->
+            <div id="page-admin" class="page hidden">
+                <!-- Stats -->
                 <div class="stats-grid" id="adminStats"></div>
-                <!-- Commission Settings -->
+
+                <!-- Settings -->
                 <div class="card" id="settingsCard">
                     <div class="card-header">
-                        <h2><i class="fas fa-cogs"></i> إعدادات العمولات والرواتب</h2>
+                        <h2><i class="fas fa-cogs"></i> <span data-ar="إعدادات العمولات والرواتب" data-en="Commission & Salary Settings">إعدادات العمولات والرواتب</span></h2>
                     </div>
                     <div class="card-body">
                         <div class="settings-grid">
-                            <div class="form-group">
-                                <label>الراتب الأساسي للمندوب (ج)</label>
-                                <input type="number" id="baseSalary" class="form-control" value="3000" min="0">
-                            </div>
-                            <div class="form-group">
-                                <label>عمولة العميل المجاني (ج)</label>
-                                <input type="number" id="freeClientComm" class="form-control" value="10" min="0">
-                            </div>
-                            <div class="form-group">
-                                <label>عمولة باقة 10 (ج)</label>
-                                <input type="number" id="pkg10Comm" class="form-control" value="50" min="0">
-                            </div>
-                            <div class="form-group">
-                                <label>عمولة باقة 25 (ج)</label>
-                                <input type="number" id="pkg25Comm" class="form-control" value="80" min="0">
-                            </div>
-                            <div class="form-group">
-                                <label>عمولة باقة 60 (ج)</label>
-                                <input type="number" id="pkg60Comm" class="form-control" value="120" min="0">
-                            </div>
-                            <div class="form-group">
-                                <label>عمولة باقة غير محدود (ج)</label>
-                                <input type="number" id="pkgUnlimitedComm" class="form-control" value="200" min="0">
-                            </div>
+                            <div class="form-group"><label data-ar="الراتب الأساسي للمندوب (ج)" data-en="Base Salary (EGP)">الراتب الأساسي للمندوب (ج)</label><input type="number" id="baseSalary" class="form-control" value="3000" min="0"></div>
+                            <div class="form-group"><label data-ar="عمولة العميل المجاني (ج)" data-en="Free Client Commission (EGP)">عمولة العميل المجاني (ج)</label><input type="number" id="freeClientComm" class="form-control" value="10" min="0"></div>
+                            <div class="form-group"><label data-ar="عمولة باقة 10 (ج)" data-en="Plan 10 Commission (EGP)">عمولة باقة 10 (ج)</label><input type="number" id="pkg10Comm" class="form-control" value="50" min="0"></div>
+                            <div class="form-group"><label data-ar="عمولة باقة 25 (ج)" data-en="Plan 25 Commission (EGP)">عمولة باقة 25 (ج)</label><input type="number" id="pkg25Comm" class="form-control" value="80" min="0"></div>
+                            <div class="form-group"><label data-ar="عمولة باقة 60 (ج)" data-en="Plan 60 Commission (EGP)">عمولة باقة 60 (ج)</label><input type="number" id="pkg60Comm" class="form-control" value="120" min="0"></div>
+                            <div class="form-group"><label data-ar="عمولة باقة غير محدود (ج)" data-en="Unlimited Commission (EGP)">عمولة باقة غير محدود (ج)</label><input type="number" id="pkgUnlimitedComm" class="form-control" value="200" min="0"></div>
                         </div>
-                        <button class="btn btn-primary" id="saveSettings">
-                            <i class="fas fa-save"></i> حفظ الإعدادات
-                        </button>
+                        <button class="btn btn-primary" onclick="saveSettings()"><i class="fas fa-save"></i> <span data-ar="حفظ الإعدادات" data-en="Save Settings">حفظ الإعدادات</span></button>
                     </div>
                 </div>
-                <!-- Subscription Plans -->
+
+                <!-- Plans -->
                 <div class="card">
-                    <div class="card-header">
-                        <h2><i class="fas fa-boxes"></i> باقات الاشتراك الشهرية</h2>
-                    </div>
+                    <div class="card-header"><h2><i class="fas fa-boxes"></i> <span data-ar="باقات الاشتراك الشهرية" data-en="Monthly Subscription Plans">باقات الاشتراك الشهرية</span></h2></div>
                     <div class="card-body">
                         <div class="plans-grid">
-                            <div class="plan-card free">
-                                <div class="plan-icon"><i class="fas fa-gift"></i></div>
-                                <h3>مجاني</h3>
-                                <div class="plan-price">0 <span>ج</span></div>
-                                <div class="plan-agents">3 مناديب</div>
-                            </div>
-                            <div class="plan-card basic">
-                                <div class="plan-icon"><i class="fas fa-star"></i></div>
-                                <h3>أساسي</h3>
-                                <div class="plan-price">500 <span>ج/شهرياً</span></div>
-                                <div class="plan-agents">10 مناديب</div>
-                            </div>
-                            <div class="plan-card pro">
-                                <div class="plan-icon"><i class="fas fa-rocket"></i></div>
-                                <h3>احترافي</h3>
-                                <div class="plan-price">1,000 <span>ج/شهرياً</span></div>
-                                <div class="plan-agents">25 مندوب</div>
-                            </div>
-                            <div class="plan-card business">
-                                <div class="plan-icon"><i class="fas fa-building"></i></div>
-                                <h3>أعمال</h3>
-                                <div class="plan-price">2,000 <span>ج/شهرياً</span></div>
-                                <div class="plan-agents">60 مندوب</div>
-                            </div>
-                            <div class="plan-card enterprise">
-                                <div class="plan-icon"><i class="fas fa-infinity"></i></div>
-                                <h3>غير محدود</h3>
-                                <div class="plan-price">3,500 <span>ج/شهرياً</span></div>
-                                <div class="plan-agents">مناديب غير محدودة</div>
-                            </div>
+                            <div class="plan-card free"><div class="plan-icon"><i class="fas fa-gift"></i></div><h3 data-ar="مجاني" data-en="Free">مجاني</h3><div class="plan-price">0 <span data-ar="ج" data-en="EGP">ج</span></div><div class="plan-agents" data-ar="3 مناديب" data-en="3 Agents">3 مناديب</div></div>
+                            <div class="plan-card basic"><div class="plan-icon"><i class="fas fa-star"></i></div><h3 data-ar="أساسي" data-en="Basic">أساسي</h3><div class="plan-price">500 <span data-ar="ج/شهرياً" data-en="EGP/mo">ج/شهرياً</span></div><div class="plan-agents" data-ar="10 مناديب" data-en="10 Agents">10 مناديب</div></div>
+                            <div class="plan-card pro"><div class="plan-icon"><i class="fas fa-rocket"></i></div><h3 data-ar="احترافي" data-en="Pro">احترافي</h3><div class="plan-price">1,000 <span data-ar="ج/شهرياً" data-en="EGP/mo">ج/شهرياً</span></div><div class="plan-agents" data-ar="25 مندوب" data-en="25 Agents">25 مندوب</div></div>
+                            <div class="plan-card business"><div class="plan-icon"><i class="fas fa-building"></i></div><h3 data-ar="أعمال" data-en="Business">أعمال</h3><div class="plan-price">2,000 <span data-ar="ج/شهرياً" data-en="EGP/mo">ج/شهرياً</span></div><div class="plan-agents" data-ar="60 مندوب" data-en="60 Agents">60 مندوب</div></div>
+                            <div class="plan-card enterprise"><div class="plan-icon"><i class="fas fa-infinity"></i></div><h3 data-ar="غير محدود" data-en="Enterprise">غير محدود</h3><div class="plan-price">3,500 <span data-ar="ج/شهرياً" data-en="EGP/mo">ج/شهرياً</span></div><div class="plan-agents" data-ar="مناديب غير محدودة" data-en="Unlimited Agents">مناديب غير محدودة</div></div>
                         </div>
                     </div>
                 </div>
+
                 <!-- Agents Table -->
                 <div class="card">
                     <div class="card-header">
-                        <h2><i class="fas fa-users"></i> المناديب</h2>
-                        <div class="header-actions">
-                            <button class="btn btn-primary" id="addAgentBtn">
-                                <i class="fas fa-plus"></i> إضافة مندوب
-                            </button>
-                        </div>
+                        <h2><i class="fas fa-users"></i> <span data-ar="المناديب" data-en="Agents">المناديب</span></h2>
+                        <button class="btn btn-primary btn-sm" onclick="showAddAgentModal()"><i class="fas fa-plus"></i> <span data-ar="إضافة مندوب" data-en="Add Agent">إضافة مندوب</span></button>
                     </div>
-                    <div class="card-body">
-                        <div class="table-wrapper">
-                            <table class="table" id="agentsTable">
-                                <thead>
-                                    <tr>
-                                        <th>#</th>
-                                        <th>الاسم</th>
-                                        <th>البريد</th>
-                                        <th>الموبايل</th>
-                                        <th>العملاء</th>
-                                        <th>العمولة</th>
-                                        <th>الراتب</th>
-                                        <th>الحالة</th>
-                                        <th>إجراءات</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="agentsTableBody"></tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <div class="card-body"><div class="table-wrapper"><table class="table"><thead><tr>
+                        <th>#</th><th data-ar="الاسم" data-en="Name">الاسم</th><th data-ar="البريد" data-en="Email">البريد</th><th data-ar="الموبايل" data-en="Phone">الموبايل</th>
+                        <th data-ar="العملاء" data-en="Clients">العملاء</th><th data-ar="العمولة" data-en="Commission">العمولة</th><th data-ar="الراتب" data-en="Salary">الراتب</th>
+                        <th data-ar="الحالة" data-en="Status">الحالة</th><th data-ar="إجراءات" data-en="Actions">إجراءات</th>
+                    </tr></thead><tbody id="agentsTableBody"></tbody></table></div></div>
                 </div>
+
                 <!-- All Clients -->
                 <div class="card">
                     <div class="card-header">
-                        <h2><i class="fas fa-address-book"></i> جميع العملاء</h2>
-                        <div class="header-actions">
-                            <input type="text" id="searchClients" placeholder="بحث..." class="search-input">
-                        </div>
+                        <h2><i class="fas fa-address-book"></i> <span data-ar="جميع العملاء" data-en="All Clients">جميع العملاء</span></h2>
+                        <input type="text" id="searchClients" placeholder="بحث... / Search..." class="search-input" oninput="searchClients(this.value)">
                     </div>
-                    <div class="card-body">
-                        <div class="table-wrapper">
-                            <table class="table" id="allClientsTable">
-                                <thead>
-                                    <tr>
-                                        <th>#</th>
-                                        <th>العميل</th>
-                                        <th>البريد</th>
-                                        <th>الموبايل</th>
-                                        <th>العنوان</th>
-                                        <th>الباقة</th>
-                                        <th>المندوب</th>
-                                        <th>التاريخ</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="allClientsBody"></tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <div class="card-body"><div class="table-wrapper"><table class="table"><thead><tr>
+                        <th>#</th><th data-ar="العميل" data-en="Client">العميل</th><th data-ar="البريد" data-en="Email">البريد</th><th data-ar="الموبايل" data-en="Phone">الموبايل</th>
+                        <th data-ar="العنوان" data-en="Address">العنوان</th><th data-ar="الباقة" data-en="Plan">الباقة</th><th data-ar="المندوب" data-en="Agent">المندوب</th><th data-ar="التاريخ" data-en="Date">التاريخ</th>
+                    </tr></thead><tbody id="allClientsBody"></tbody></table></div></div>
                 </div>
+
                 <!-- Warnings -->
-                <div class="card" id="warningsCard">
-                    <div class="card-header warning">
-                        <h2><i class="fas fa-exclamation-triangle"></i> تحذيرات - عملاء مكررون</h2>
-                    </div>
-                    <div class="card-body">
-                        <div id="warningsList" class="warnings-list"></div>
-                    </div>
+                <div class="card hidden" id="warningsCard">
+                    <div class="card-header warning"><h2><i class="fas fa-exclamation-triangle"></i> <span data-ar="تحذيرات - عملاء مكررون" data-en="Warnings - Duplicate Clients">تحذيرات - عملاء مكررون</span></h2></div>
+                    <div class="card-body"><div id="warningsList" class="warnings-list"></div></div>
                 </div>
-                <!-- Commission Report -->
+
+                <!-- Salary Report -->
                 <div class="card">
-                    <div class="card-header">
-                        <h2><i class="fas fa-calculator"></i> تقرير الرواتب والعمولات</h2>
-                        <span class="badge" id="reportPeriod"></span>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-wrapper">
-                            <table class="table" id="salaryTable">
-                                <thead>
-                                    <tr>
-                                        <th>المندوب</th>
-                                        <th>العملاء المجانيين</th>
-                                        <th>باقة 10</th>
-                                        <th>باقة 25</th>
-                                        <th>باقة 60</th>
-                                        <th>غير محدود</th>
-                                        <th>إجمالي العمولة</th>
-                                        <th>الراتب الأساسي</th>
-                                        <th>صافي الراتب</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="salaryBody"></tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <div class="card-header"><h2><i class="fas fa-calculator"></i> <span data-ar="تقرير الرواتب والعمولات" data-en="Salary & Commission Report">تقرير الرواتب والعمولات</span></h2><span class="badge badge-primary" id="reportPeriod"></span></div>
+                    <div class="card-body"><div class="table-wrapper"><table class="table"><thead><tr>
+                        <th data-ar="المندوب" data-en="Agent">المندوب</th><th data-ar="عملاء مجانيين" data-en="Free Clients">عملاء مجانيين</th>
+                        <th>باقة 10</th><th>باقة 25</th><th>باقة 60</th><th data-ar="غير محدود" data-en="Unlimited">غير محدود</th>
+                        <th data-ar="إجمالي العمولة" data-en="Total Commission">إجمالي العمولة</th><th data-ar="الراتب الأساسي" data-en="Base Salary">الراتب الأساسي</th><th data-ar="صافي الراتب" data-en="Net Salary">صافي الراتب</th>
+                    </tr></thead><tbody id="salaryBody"></tbody></table></div></div>
                 </div>
+
                 <!-- Charts -->
                 <div class="charts-grid">
-                    <div class="card">
-                        <div class="card-header"><h2><i class="fas fa-chart-bar"></i> أداء المناديب</h2></div>
-                        <div class="card-body"><canvas id="agentsChart"></canvas></div>
-                    </div>
-                    <div class="card">
-                        <div class="card-header"><h2><i class="fas fa-chart-pie"></i> توزيع الباقات</h2></div>
-                        <div class="card-body"><canvas id="packagesChart"></canvas></div>
-                    </div>
+                    <div class="card"><div class="card-header"><h2><i class="fas fa-chart-bar"></i> <span data-ar="أداء المناديب" data-en="Agent Performance">أداء المناديب</span></h2></div><div class="card-body"><canvas id="agentsChart"></canvas></div></div>
+                    <div class="card"><div class="card-header"><h2><i class="fas fa-chart-pie"></i> <span data-ar="توزيع الباقات" data-en="Plan Distribution">توزيع الباقات</span></h2></div><div class="card-body"><canvas id="packagesChart"></canvas></div></div>
                 </div>
             </div>
 
-            <!-- Agent Dashboard -->
-            <div id="agentDashboard" class="page hidden">
+            <!-- ========== AGENT DASHBOARD ========== -->
+            <div id="page-agent" class="page hidden">
                 <div class="agent-header">
-                    <h1>لوحة المندوب</h1>
-                    <div class="agent-info" id="agentInfo"></div>
+                    <h1 data-ar="لوحة المندوب" data-en="Agent Dashboard">لوحة المندوب</h1>
+                    <div class="agent-info"><span class="agency-badge" id="agentAgencyBadge"></span></div>
                 </div>
-                <!-- Agent Stats -->
                 <div class="stats-grid" id="agentStats"></div>
-                <!-- Add Client Form -->
+                <!-- Add Client -->
                 <div class="card">
-                    <div class="card-header">
-                        <h2><i class="fas fa-user-plus"></i> إضافة عميل جديد</h2>
-                    </div>
+                    <div class="card-header"><h2><i class="fas fa-user-plus"></i> <span data-ar="إضافة عميل جديد" data-en="Add New Client">إضافة عميل جديد</span></h2></div>
                     <div class="card-body">
-                        <form id="addClientForm" class="client-form">
+                        <form id="addClientForm" onsubmit="return addClient(event)">
                             <div class="form-row">
-                                <div class="form-group">
-                                    <label for="clientName">اسم العميل</label>
-                                    <input type="text" id="clientName" required placeholder="اسم العميل">
-                                </div>
-                                <div class="form-group">
-                                    <label for="clientEmail">البريد الإلكتروني</label>
-                                    <input type="email" id="clientEmail" required placeholder="example@email.com">
-                                </div>
+                                <div class="form-group"><label data-ar="اسم العميل" data-en="Client Name">اسم العميل</label><input type="text" id="clientName" required placeholder="اسم العميل"></div>
+                                <div class="form-group"><label data-ar="البريد الإلكتروني" data-en="Email">البريد الإلكتروني</label><input type="email" id="clientEmail" required placeholder="example@email.com"></div>
                             </div>
                             <div class="form-row">
-                                <div class="form-group">
-                                    <label for="clientCountryCode">كود الدولة</label>
+                                <div class="form-group"><label data-ar="كود الدولة" data-en="Country Code">كود الدولة</label>
                                     <select id="clientCountryCode" class="form-control">
                                         <option value="20" data-len="10">🇪🇬 مصر (+20)</option>
                                         <option value="966" data-len="9">🇸🇦 السعودية (+966)</option>
                                         <option value="971" data-len="9">🇦🇪 الإمارات (+971)</option>
                                         <option value="962" data-len="9">🇯🇴 الأردن (+962)</option>
                                         <option value="212" data-len="9">🇲🇦 المغرب (+212)</option>
-                                        <option value="213" data-len="9">🇩🇿 الجزائر (+213)</option>
-                                        <option value="216" data-len="8">🇹🇳 تونس (+216)</option>
-                                        <option value="964" data-len="10">🇮🇶 العراق (+964)</option>
-                                        <option value="961" data-len="8">🇱🇧 لبنان (+961)</option>
                                         <option value="1" data-len="10">🇺🇸 USA (+1)</option>
                                         <option value="44" data-len="10">🇬🇧 UK (+44)</option>
                                     </select>
                                 </div>
-                                <div class="form-group">
-                                    <label for="clientPhone">رقم الموبايل</label>
-                                    <input type="tel" id="clientPhone" required placeholder="رقم الموبايل">
-                                </div>
+                                <div class="form-group"><label data-ar="رقم الموبايل" data-en="Phone">رقم الموبايل</label><input type="tel" id="clientPhone" required placeholder="رقم الموبايل"></div>
                             </div>
-                            <div class="form-group">
-                                <label for="clientAddress">العنوان</label>
-                                <input type="text" id="clientAddress" required placeholder="العنوان التفصيلي">
-                            </div>
-                            <div class="form-group">
-                                <label for="clientPackage">نوع الباقة</label>
+                            <div class="form-group"><label data-ar="العنوان" data-en="Address">العنوان</label><input type="text" id="clientAddress" required placeholder="العنوان التفصيلي"></div>
+                            <div class="form-group"><label data-ar="نوع الباقة" data-en="Plan Type">نوع الباقة</label>
                                 <select id="clientPackage" class="form-control" required>
-                                    <option value="">اختر الباقة</option>
-                                    <option value="free">مجاني (تجريبي)</option>
-                                    <option value="10">باقة 10 - 500 ج</option>
-                                    <option value="25">باقة 25 - 1000 ج</option>
-                                    <option value="60">باقة 60 - 2000 ج</option>
-                                    <option value="unlimited">غير محدود - 3500 ج</option>
+                                    <option value="" data-ar="اختر الباقة" data-en="Select Plan">اختر الباقة</option>
+                                    <option value="free" data-ar="مجاني (تجريبي)" data-en="Free (Trial)">مجاني (تجريبي)</option>
+                                    <option value="10" data-ar="باقة 10 - 500 ج" data-en="Plan 10 - 500 EGP">باقة 10 - 500 ج</option>
+                                    <option value="25" data-ar="باقة 25 - 1000 ج" data-en="Plan 25 - 1000 EGP">باقة 25 - 1000 ج</option>
+                                    <option value="60" data-ar="باقة 60 - 2000 ج" data-en="Plan 60 - 2000 EGP">باقة 60 - 2000 ج</option>
+                                    <option value="unlimited" data-ar="غير محدود - 3500 ج" data-en="Unlimited - 3500 EGP">غير محدود - 3500 ج</option>
                                 </select>
                             </div>
-                            <button type="submit" class="btn btn-primary btn-full">
-                                <i class="fas fa-plus-circle"></i> إضافة العميل
-                            </button>
+                            <button type="submit" class="btn btn-primary btn-full"><i class="fas fa-plus-circle"></i> <span data-ar="إضافة العميل" data-en="Add Client">إضافة العميل</span></button>
                         </form>
                     </div>
                 </div>
                 <!-- My Clients -->
                 <div class="card">
-                    <div class="card-header">
-                        <h2><i class="fas fa-list"></i> عملائي</h2>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-wrapper">
-                            <table class="table" id="myClientsTable">
-                                <thead>
-                                    <tr>
-                                        <th>#</th>
-                                        <th>العميل</th>
-                                        <th>البريد</th>
-                                        <th>الموبايل</th>
-                                        <th>العنوان</th>
-                                        <th>الباقة</th>
-                                        <th>التاريخ</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="myClientsBody"></tbody>
-                            </table>
-                        </div>
-                    </div>
+                    <div class="card-header"><h2><i class="fas fa-list"></i> <span data-ar="عملائي" data-en="My Clients">عملائي</span></h2></div>
+                    <div class="card-body"><div class="table-wrapper"><table class="table"><thead><tr>
+                        <th>#</th><th data-ar="العميل" data-en="Client">العميل</th><th data-ar="البريد" data-en="Email">البريد</th><th data-ar="الموبايل" data-en="Phone">الموبايل</th>
+                        <th data-ar="العنوان" data-en="Address">العنوان</th><th data-ar="الباقة" data-en="Plan">الباقة</th><th data-ar="التاريخ" data-en="Date">التاريخ</th>
+                    </tr></thead><tbody id="myClientsBody"></tbody></table></div></div>
                 </div>
                 <!-- My Salary -->
                 <div class="card">
-                    <div class="card-header">
-                        <h2><i class="fas fa-wallet"></i> راتبي وعمولتي</h2>
-                        <span class="badge" id="agentReportPeriod"></span>
-                    </div>
-                    <div class="card-body">
-                        <div class="salary-summary" id="mySalarySummary"></div>
-                    </div>
+                    <div class="card-header"><h2><i class="fas fa-wallet"></i> <span data-ar="راتبي وعمولتي" data-en="My Salary & Commission">راتبي وعمولتي</span></h2><span class="badge badge-primary" id="agentReportPeriod"></span></div>
+                    <div class="card-body"><div class="salary-summary" id="mySalarySummary"></div></div>
                 </div>
             </div>
 
-            <!-- Sub-pages -->
-            <div id="privacyPage" class="page hidden"><div class="legal-page" id="privacyContent"></div></div>
-            <div id="termsPage" class="page hidden"><div class="legal-page" id="termsContent"></div></div>
-            <div id="refundPage" class="page hidden"><div class="legal-page" id="refundContent"></div></div>
-            <div id="aboutPage" class="page hidden"><div class="legal-page" id="aboutContent"></div></div>
-            <div id="contactPage" class="page hidden"><div class="legal-page" id="contactContent"></div></div>
-            <div id="adsensePage" class="page hidden"><div class="legal-page" id="adsenseContent"></div></div>
-            <div id="googlePlayPage" class="page hidden"><div class="legal-page" id="googlePlayContent"></div></div>
-            <div id="appStorePage" class="page hidden"><div class="legal-page" id="appStoreContent"></div></div>
+            <!-- ========== LEGAL PAGES ========== -->
+            <div id="page-privacy" class="page hidden"><div class="legal-page" id="privacyContent"></div></div>
+            <div id="page-terms" class="page hidden"><div class="legal-page" id="termsContent"></div></div>
+            <div id="page-refund" class="page hidden"><div class="legal-page" id="refundContent"></div></div>
+            <div id="page-about" class="page hidden"><div class="legal-page" id="aboutContent"></div></div>
+            <div id="page-contact" class="page hidden"><div class="legal-page" id="contactContent"></div></div>
+            <div id="page-adsense" class="page hidden"><div class="legal-page" id="adsenseContent"></div></div>
+            <div id="page-googleplay" class="page hidden"><div class="legal-page" id="googleplayContent"></div></div>
+            <div id="page-appstore" class="page hidden"><div class="legal-page" id="appstoreContent"></div></div>
         </main>
 
-        <!-- Footer -->
+        <!-- ========== FOOTER (always visible) ========== -->
         <footer class="footer" id="mainFooter">
             <div class="footer-content">
                 <div class="footer-brand">
                     <h3><i class="fas fa-chart-line"></i> SalesHub Pro</h3>
-                    <p>نظام إدارة مناديب المبيعات الاحترافي</p>
+                    <p data-ar="نظام إدارة مناديب المبيعات الاحترافي" data-en="Professional Sales Agent Management System">نظام إدارة مناديب المبيعات الاحترافي</p>
                 </div>
                 <div class="footer-links">
-                    <h4>روابط سريعة</h4>
-                    <a href="#" onclick="navigate('about')">من نحن</a>
-                    <a href="#" onclick="navigate('contact')">اتصل بنا</a>
-                    <a href="#" onclick="navigate('privacy')">سياسة الخصوصية</a>
-                    <a href="#" onclick="navigate('refund')">سياسة الاسترجاع</a>
+                    <h4 data-ar="روابط سريعة" data-en="Quick Links">روابط سريعة</h4>
+                    <a href="#" onclick="navigateTo('about');return false" data-ar="من نحن" data-en="About Us">من نحن</a>
+                    <a href="#" onclick="navigateTo('contact');return false" data-ar="اتصل بنا" data-en="Contact Us">اتصل بنا</a>
+                    <a href="#" onclick="navigateTo('privacy');return false" data-ar="سياسة الخصوصية" data-en="Privacy Policy">سياسة الخصوصية</a>
+                    <a href="#" onclick="navigateTo('refund');return false" data-ar="سياسة الاسترجاع" data-en="Refund Policy">سياسة الاسترجاع</a>
                 </div>
                 <div class="footer-links">
-                    <h4>قانوني</h4>
-                    <a href="#" onclick="navigate('terms')">الشروط والأحكام</a>
-                    <a href="#" onclick="navigate('adsense')">سياسة AdSense</a>
-                    <a href="#" onclick="navigate('googleplay')">Google Play</a>
-                    <a href="#" onclick="navigate('appstore')">App Store</a>
+                    <h4 data-ar="قانوني" data-en="Legal">قانوني</h4>
+                    <a href="#" onclick="navigateTo('terms');return false" data-ar="الشروط والأحكام" data-en="Terms & Conditions">الشروط والأحكام</a>
+                    <a href="#" onclick="navigateTo('adsense');return false" data-ar="سياسة AdSense" data-en="AdSense Policy">سياسة AdSense</a>
+                    <a href="#" onclick="navigateTo('googleplay');return false">Google Play</a>
+                    <a href="#" onclick="navigateTo('appstore');return false">App Store</a>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>© 2026 SalesHub Pro. جميع الحقوق محفوظة.</p>
+                <p>© 2026 SalesHub Pro. <span data-ar="جميع الحقوق محفوظة" data-en="All rights reserved.">جميع الحقوق محفوظة.</span></p>
             </div>
         </footer>
 
-        <!-- Back to Top -->
-        <button class="back-to-top hidden" id="backToTop">
-            <i class="fas fa-chevron-up"></i>
-        </button>
+        <!-- Back to top -->
+        <button class="back-to-top hidden" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})"><i class="fas fa-chevron-up"></i></button>
 
         <!-- Modal -->
-        <div class="modal-overlay hidden" id="modalOverlay">
+        <div class="modal-overlay hidden" id="modalOverlay" onclick="if(event.target===this)closeModal()">
             <div class="modal" id="mainModal">
-                <div class="modal-header">
-                    <h3 id="modalTitle"></h3>
-                    <button class="btn-icon" onclick="closeModal()"><i class="fas fa-times"></i></button>
-                </div>
+                <div class="modal-header"><h3 id="modalTitle"></h3><button class="btn-icon" onclick="closeModal()"><i class="fas fa-times"></i></button></div>
                 <div class="modal-body" id="modalBody"></div>
                 <div class="modal-footer" id="modalFooter"></div>
             </div>
