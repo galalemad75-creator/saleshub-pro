@@ -1,4 +1,4 @@
-// ===== SalesHub Pro v2.0 =====
+// ===== SalesHub Pro v3.0 =====
 // ================================
 
 // State
@@ -6,7 +6,8 @@ const S = {
     lang: localStorage.getItem('shp_lang') || 'ar',
     theme: localStorage.getItem('shp_theme') || 'light',
     user: null,
-    charts: {}
+    charts: {},
+    paymentFilter: 'pending'
 };
 
 // DB helpers
@@ -19,10 +20,15 @@ const DB = {
             users: this.get('users') || [],
             clients: this.get('clients') || [],
             notifs: this.get('notifs') || [],
-            settings: this.get('settings') || { baseSalary:3000, freeClientComm:10, pkg10Comm:50, pkg25Comm:80, pkg60Comm:120, pkgUnlimitedComm:200 }
+            payments: this.get('payments') || [],
+            settings: this.get('settings') || { baseSalary:3000, freeClientComm:10, pkg10Comm:50, pkg25Comm:80, pkg60Comm:120, pkgUnlimitedComm:200 },
+            paymentNumbers: this.get('paymentNumbers') || { vodafone: '01012345678', instapay: '01012345678' }
         };
     }
 };
+
+// Plan amounts
+const PLAN_AMOUNTS = { free: 0, '10': 500, '25': 1000, '60': 2000, unlimited: 3500 };
 
 // ==================== LANGUAGE ====================
 function applyLang() {
@@ -53,7 +59,7 @@ function toggleTheme() {
     S.theme = S.theme === 'light' ? 'dark' : 'light';
     localStorage.setItem('shp_theme', S.theme);
     applyTheme();
-    if (S.user) renderDashboard(); // redraw charts with correct colors
+    if (S.user) renderDashboard();
 }
 
 // ==================== NAVIGATION ====================
@@ -62,15 +68,12 @@ function navigateTo(page) {
     const el = document.getElementById('page-' + page);
     if (el) { el.classList.remove('hidden'); }
     const legal = ['privacy','terms','refund','about','contact','adsense','googleplay','appstore'];
-    // Render legal pages
     if (legal.includes(page)) renderLegal(page);
-    // Close mobile menu
     document.getElementById('navLinks').classList.remove('open');
     applyLang();
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// Back to dashboard/home
 function goBack() {
     if (S.user) {
         navigateTo(S.user.role==='admin'?'admin':'agent');
@@ -141,6 +144,34 @@ function findDupes(clients) {
     return d;
 }
 
+// ==================== DEFAULT ADMIN ====================
+function ensureDefaultAdmin() {
+    const d = DB.all();
+    // Check if any admin exists
+    const hasAdmin = d.users.some(u => u.role === 'admin');
+    if (!hasAdmin) {
+        const admin = {
+            id: gid(),
+            name: 'المدير العام',
+            email: 'admin@saleshub.com',
+            phone: '+20000000000',
+            password: 'Admin@123',
+            role: 'superadmin',
+            agencyId: 'ADMIN-MASTER',
+            adminId: null,
+            plan: 'enterprise',
+            status: 'active',
+            createdAt: new Date().toISOString()
+        };
+        d.users.push(admin);
+        DB.set('users', d.users);
+    }
+    // Ensure payment numbers exist
+    if (!DB.get('paymentNumbers')) {
+        DB.set('paymentNumbers', { vodafone: '01012345678', instapay: '01012345678' });
+    }
+}
+
 // ==================== NOTIFICATIONS ====================
 function addNotif(uid, type, title, msg) {
     const d = DB.all();
@@ -203,7 +234,7 @@ function toggleAuthMode(mode) {
         l.dataset.ar='العودة لتسجيل الدخول'; l.dataset.en='Back to Login';
         l.onclick = () => toggleAuthMode('login');
     }
-    applyLang(); // apply translation immediately
+    applyLang();
 }
 
 function handleAuth(e) {
@@ -249,7 +280,7 @@ function doRegister() {
     let userAgencyId=null, linkedAdmin=null;
     if (role==='agent') {
         if (!agencyId) { showToast(S.lang==='ar'?'رقم الوكالة مطلوب':'Agency ID required','error'); return; }
-        const admin = d.users.find(u=>u.role==='admin' && u.agencyId===agencyId);
+        const admin = d.users.find(u=>(u.role==='admin'||u.role==='superadmin') && u.agencyId===agencyId);
         if (!admin) { showToast(S.lang==='ar'?'رقم الوكالة غير صحيح':'Invalid Agency ID','error'); return; }
         const count = d.users.filter(u=>u.role==='agent' && u.adminId===admin.id).length;
         if (planLimit(admin.plan||'free')!==-1 && count>=planLimit(admin.plan||'free')) {
@@ -261,7 +292,7 @@ function doRegister() {
         userAgencyId = genAgencyId();
     }
 
-    const user = { id:gid(), name, email, phone:'+'+cc+phone, password:pass, role, agencyId:userAgencyId, adminId:linkedAdmin, plan:role==='admin'?'free':null, status:'active', createdAt:new Date().toISOString() };
+    const user = { id:gid(), name, email, phone:'+'+cc+phone, password:pass, role: role==='admin'?'admin':'agent', agencyId:userAgencyId, adminId:linkedAdmin, plan:role==='admin'?'free':null, status:'active', createdAt:new Date().toISOString() };
     d.users.push(user); DB.set('users', d.users);
     if (role==='agent' && linkedAdmin) addNotif(linkedAdmin,'info','مندوب جديد','انضم '+name+' كمندوب');
     S.user = user; DB.set('currentUser', user);
@@ -280,9 +311,8 @@ function postLogin() {
     navigateTo('dashboard');
     document.getElementById('notifBtn').classList.remove('hidden');
     document.getElementById('logoutBtn').classList.remove('hidden');
-    // Update nav
     const nav = document.getElementById('navLinks');
-    if (S.user.role==='admin') {
+    if (S.user.role==='admin' || S.user.role==='superadmin') {
         nav.innerHTML = `<a href="#" data-page="dashboard" onclick="navigateTo('admin');return false" class="active" data-ar="لوحة التحكم" data-en="Dashboard">لوحة التحكم</a>`;
     } else {
         nav.innerHTML = `<a href="#" data-page="dashboard" onclick="navigateTo('agent');return false" class="active" data-ar="لوحة التحكم" data-en="Dashboard">لوحة التحكم</a>`;
@@ -307,9 +337,9 @@ function handleLogout() {
 // ==================== DASHBOARD ====================
 function renderDashboard() {
     if (!S.user) return;
-    if (S.user.role==='admin') renderAdmin();
+    if (S.user.role==='admin' || S.user.role==='superadmin') renderAdmin();
     else renderAgent();
-    applyLang(); // re-apply translation to dynamic content
+    applyLang();
 }
 
 // ==================== ADMIN ====================
@@ -329,15 +359,20 @@ function renderAdmin() {
     document.getElementById('pkg60Comm').value = d.settings.pkg60Comm;
     document.getElementById('pkgUnlimitedComm').value = d.settings.pkgUnlimitedComm;
 
+    // Payment Numbers
+    document.getElementById('adminVodafoneNum').textContent = d.paymentNumbers.vodafone;
+    document.getElementById('adminInstapayNum').textContent = d.paymentNumbers.instapay;
+
     // Stats
     const totalComm = agents.reduce((s,a)=> s+calcComm(getPeriodClients(allClients,a.id),d.settings), 0);
+    const pendingPayments = d.payments.filter(p=>p.status==='pending').length;
     const isAr = S.lang==='ar';
     document.getElementById('adminStats').innerHTML = `
         <div class="stat-card"><div class="stat-icon purple"><i class="fas fa-users"></i></div><div class="stat-info"><h3>${agents.length}</h3><p>${isAr?'إجمالي المناديب':'Total Agents'}</p></div></div>
         <div class="stat-card"><div class="stat-icon green"><i class="fas fa-address-book"></i></div><div class="stat-info"><h3>${allClients.length}</h3><p>${isAr?'إجمالي العملاء':'Total Clients'}</p></div></div>
         <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-user-check"></i></div><div class="stat-info"><h3>${periodClients.length}</h3><p>${isAr?'عملاء هذه الفترة':'Period Clients'}</p></div></div>
         <div class="stat-card"><div class="stat-icon orange"><i class="fas fa-money-bill-wave"></i></div><div class="stat-info"><h3>${totalComm.toLocaleString()} ${isAr?'ج':'EGP'}</h3><p>${isAr?'إجمالي العمولات':'Total Commissions'}</p></div></div>
-        <div class="stat-card"><div class="stat-icon red"><i class="fas fa-exclamation-triangle"></i></div><div class="stat-info"><h3>${findDupes(allClients).length}</h3><p>${isAr?'تحذيرات':'Warnings'}</p></div></div>
+        <div class="stat-card"><div class="stat-icon red"><i class="fas fa-credit-card"></i></div><div class="stat-info"><h3>${pendingPayments}</h3><p>${isAr?'دفعات قيد المراجعة':'Pending Payments'}</p></div></div>
     `;
 
     // Agents Table
@@ -370,7 +405,6 @@ function renderAdmin() {
             const names = w.clients.map(c=>{const a=agents.find(x=>x.id===c.agentId);return a?a.name:'?';});
             return `<div class="warning-item"><i class="fas fa-exclamation-triangle"></i><div class="warn-info"><h4>${w.type==='email'?(isAr?'بريد مكرر':'Duplicate Email'):(isAr?'موبايل مكرر':'Duplicate Phone')}</h4><p>${w.val} — ${isAr?'المناديب':'Agents'}: ${names.join(', ')}</p></div></div>`;
         }).join('');
-        // Send admin notifications for duplicates
         dupes.forEach(w => {
             w.clients.forEach(c => {
                 const a = agents.find(x=>x.id===c.agentId);
@@ -390,6 +424,9 @@ function renderAdmin() {
         return `<tr><td>${a.name}</td><td>${cnt.free}</td><td>${cnt['10']}</td><td>${cnt['25']}</td><td>${cnt['60']}</td><td>${cnt.unlimited}</td>
             <td>${comm.toLocaleString()} ${isAr?'ج':'EGP'}</td><td>${d.settings.baseSalary.toLocaleString()} ${isAr?'ج':'EGP'}</td><td><strong>${net.toLocaleString()} ${isAr?'ج':'EGP'}</strong></td></tr>`;
     }).join('') : `<tr><td colspan="9" style="text-align:center">${isAr?'لا توجد بيانات':'No data'}</td></tr>`;
+
+    // Payments
+    renderPayments(d, agents);
 
     // Charts
     renderCharts(agents, allClients);
@@ -414,6 +451,241 @@ function searchClients(q) {
         return a && (c.name.toLowerCase().includes(q)||c.email.toLowerCase().includes(q)||c.phone.includes(q));
     });
     renderClients(filtered, agents);
+}
+
+// ==================== PAYMENTS (ADMIN) ====================
+function renderPayments(d, agents) {
+    const isAr = S.lang==='ar';
+    const pkgNames = {free:isAr?'مجاني':'Free','10':isAr?'باقة 10':'Plan 10','25':isAr?'باقة 25':'Plan 25','60':isAr?'باقة 60':'Plan 60',unlimited:isAr?'غير محدود':'Unlimited'};
+    const methodNames = {vodafone:isAr?'فودافون كاش':'Vodafone Cash',instapay:isAr?'إنستاباي':'InstaPay'};
+
+    let payments = d.payments;
+    if (S.paymentFilter !== 'all') {
+        payments = payments.filter(p => p.status === S.paymentFilter);
+    }
+
+    // Update pending count badge
+    const pendingCount = d.payments.filter(p=>p.status==='pending').length;
+    document.getElementById('pendingCount').textContent = pendingCount;
+
+    // Update filter button states
+    document.querySelectorAll('.payment-filter-btns .btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('payFilter' + S.paymentFilter.charAt(0).toUpperCase() + S.paymentFilter.slice(1)).classList.add('active');
+
+    const tbody = document.getElementById('paymentsTableBody');
+    const emptyState = document.getElementById('paymentsEmpty');
+
+    if (payments.length === 0) {
+        tbody.innerHTML = '';
+        emptyState.classList.remove('hidden');
+    } else {
+        emptyState.classList.add('hidden');
+        tbody.innerHTML = payments.map((p,i) => {
+            const agent = agents.find(a=>a.id===p.agentId);
+            const statusClass = p.status==='pending'?'pending':p.status==='approved'?'approved':'rejected';
+            const statusText = p.status==='pending'?(isAr?'قيد المراجعة':'Pending'):p.status==='approved'?(isAr?'مقبول':'Approved'):(isAr?'مرفوض':'Rejected');
+            const actions = p.status==='pending' ? `
+                <button class="btn btn-sm btn-success" onclick="approvePayment('${p.id}')" title="${isAr?'قبول':'Approve'}"><i class="fas fa-check"></i></button>
+                <button class="btn btn-sm btn-danger" onclick="rejectPayment('${p.id}')" title="${isAr?'رفض':'Reject'}"><i class="fas fa-times"></i></button>` : '';
+            return `<tr>
+                <td>${i+1}</td>
+                <td>${p.clientName}</td>
+                <td><span class="badge badge-primary">${pkgNames[p.package]||p.package}</span></td>
+                <td>${PLAN_AMOUNTS[p.package]||0} ${isAr?'ج':'EGP'}</td>
+                <td>${methodNames[p.method]||p.method}</td>
+                <td>${p.holderName}</td>
+                <td style="direction:ltr">${p.transactionId}</td>
+                <td>${p.screenshot ? `<img src="${p.screenshot}" class="screenshot-thumb" onclick="viewScreenshot('${p.id}')" alt="سكرين">` : '-'}</td>
+                <td>${agent?agent.name:'-'}</td>
+                <td>${fmtDate(p.date)}</td>
+                <td><span class="payment-status ${statusClass}"><i class="fas fa-${p.status==='pending'?'clock':p.status==='approved'?'check':'times'}"></i> ${statusText}</span></td>
+                <td class="actions">${actions}</td>
+            </tr>`;
+        }).join('');
+    }
+}
+
+function filterPayments(filter) {
+    S.paymentFilter = filter;
+    const d = DB.all();
+    const agents = d.users.filter(u=>u.role==='agent'&&u.adminId===S.user.id);
+    renderPayments(d, agents);
+}
+
+function approvePayment(id) {
+    const d = DB.all();
+    const p = d.payments.find(p=>p.id===id);
+    if (!p) return;
+    p.status = 'approved';
+    DB.set('payments', d.payments);
+    const isAr = S.lang==='ar';
+
+    // Add the client now that payment is approved
+    const agent = d.users.find(u=>u.id===p.agentId);
+    if (agent) {
+        d.clients.push({
+            id: gid(),
+            name: p.clientName,
+            email: p.clientEmail,
+            phone: p.clientPhone,
+            address: p.clientAddress,
+            package: p.package,
+            agentId: p.agentId,
+            date: new Date().toISOString()
+        });
+        DB.set('clients', d.clients);
+        addNotif(p.agentId, 'success', isAr?'تم قبول الدفع':'Payment Approved', `${p.clientName} — ${isAr?'تمت الموافقة':'Approved'}`);
+    }
+    showToast(isAr?'تم قبول الدفع وإضافة العميل':'Payment approved & client added','success');
+    renderDashboard();
+}
+
+function rejectPayment(id) {
+    const isAr = S.lang==='ar';
+    openModal(isAr?'رفض الدفع':'Reject Payment',
+        `<div class="form-group"><label>${isAr?'سبب الرفض':'Rejection Reason'}</label><textarea id="rejectReason" class="form-control" rows="3" placeholder="${isAr?'أدخل سبب الرفض':'Enter rejection reason'}"></textarea></div>`,
+        `<button class="btn btn-danger" onclick="confirmRejectPayment('${id}')"><i class="fas fa-times"></i> ${isAr?'رفض':'Reject'}</button>
+         <button class="btn btn-secondary" onclick="closeModal()">${isAr?'إلغاء':'Cancel'}</button>`);
+}
+
+function confirmRejectPayment(id) {
+    const d = DB.all();
+    const p = d.payments.find(p=>p.id===id);
+    if (!p) return;
+    const reason = document.getElementById('rejectReason').value.trim();
+    const isAr = S.lang==='ar';
+    p.status = 'rejected';
+    p.rejectReason = reason;
+    DB.set('payments', d.payments);
+    addNotif(p.agentId, 'warning', isAr?'تم رفض الدفع':'Payment Rejected', `${p.clientName} — ${reason||isAr?'بدون سبب':'No reason'}`);
+    closeModal();
+    showToast(isAr?'تم رفض الدفع':'Payment rejected','success');
+    renderDashboard();
+}
+
+function viewScreenshot(id) {
+    const d = DB.all();
+    const p = d.payments.find(p=>p.id===id);
+    if (!p || !p.screenshot) return;
+    const isAr = S.lang==='ar';
+    openModal(isAr?'سكرين الدفع':'Payment Screenshot',
+        `<img src="${p.screenshot}" style="width:100%;border-radius:12px;max-height:500px;object-fit:contain">`,
+        `<button class="btn btn-secondary" onclick="closeModal()">${isAr?'إغلاق':'Close'}</button>`);
+}
+
+function editPaymentNumber(type) {
+    const d = DB.all();
+    const isAr = S.lang==='ar';
+    const currentVal = d.paymentNumbers[type];
+    const label = type==='vodafone'?(isAr?'رقم فودافون كاش':'Vodafone Cash Number'):(isAr?'رقم إنستاباي':'InstaPay Number');
+    openModal(label,
+        `<div class="form-group"><input type="text" id="editPayNum" class="form-control" value="${currentVal}" placeholder="${isAr?'أدخل الرقم الجديد':'Enter new number'}" style="font-size:1.2rem;text-align:center;direction:ltr;letter-spacing:2px"></div>`,
+        `<button class="btn btn-primary" onclick="savePaymentNumber('${type}')"><i class="fas fa-save"></i> ${isAr?'حفظ':'Save'}</button>
+         <button class="btn btn-secondary" onclick="closeModal()">${isAr?'إلغاء':'Cancel'}</button>`);
+}
+
+function savePaymentNumber(type) {
+    const val = document.getElementById('editPayNum').value.trim();
+    const isAr = S.lang==='ar';
+    if (!val) { showToast(isAr?'أدخل الرقم':'Enter number','error'); return; }
+    const d = DB.all();
+    d.paymentNumbers[type] = val;
+    DB.set('paymentNumbers', d.paymentNumbers);
+    closeModal();
+    showToast(isAr?'تم تحديث الرقم':'Number updated','success');
+    renderDashboard();
+}
+
+// ==================== PAYMENT SECTION (AGENT) ====================
+function togglePaymentSection() {
+    const pkg = document.getElementById('clientPackage').value;
+    const sec = document.getElementById('paymentSection');
+    if (pkg && pkg !== 'free') {
+        sec.classList.remove('hidden');
+        updatePaymentInfo();
+    } else {
+        sec.classList.add('hidden');
+    }
+}
+
+function updatePaymentInfo() {
+    const method = document.querySelector('input[name="paymentMethod"]:checked')?.value;
+    const d = DB.all();
+    const pn = d.paymentNumbers;
+    const isAr = S.lang==='ar';
+    const infoBox = document.getElementById('paymentInfoContent');
+
+    if (method === 'vodafone') {
+        infoBox.innerHTML = `
+            <i class="fas fa-mobile-alt" style="color:#E60012"></i>
+            <div>
+                <strong>${isAr?'رقم فودافون كاش:':'Vodafone Cash:'}</strong>
+                <span style="direction:ltr">${pn.vodafone}</span>
+            </div>
+            <button type="button" class="btn-copy" onclick="copyPaymentNumber()" data-ar="نسخ" data-en="Copy">${isAr?'نسخ':'Copy'}</button>`;
+    } else {
+        infoBox.innerHTML = `
+            <i class="fas fa-bolt" style="color:#0066FF"></i>
+            <div>
+                <strong>${isAr?'رقم إنستاباي:':'InstaPay:'}</strong>
+                <span style="direction:ltr">${pn.instapay}</span>
+            </div>
+            <button type="button" class="btn-copy" onclick="copyPaymentNumber()" data-ar="نسخ" data-en="Copy">${isAr?'نسخ':'Copy'}</button>`;
+    }
+}
+
+function copyPaymentNumber() {
+    const num = document.querySelector('#paymentInfoContent span')?.textContent;
+    if (num) {
+        navigator.clipboard.writeText(num).then(() => {
+            showToast(S.lang==='ar'?'تم النسخ':'Copied','success');
+        }).catch(() => {
+            // Fallback
+            const ta = document.createElement('textarea');
+            ta.value = num;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            ta.remove();
+            showToast(S.lang==='ar'?'تم النسخ':'Copied','success');
+        });
+    }
+}
+
+function handleScreenshotUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const isAr = S.lang==='ar';
+
+    // Validate size (2MB max)
+    if (file.size > 2 * 1024 * 1024) {
+        showToast(isAr?'حجم الصورة كبير جداً (أقصى 2MB)':'Image too large (max 2MB)','error');
+        input.value = '';
+        return;
+    }
+
+    // Validate type
+    if (!file.type.startsWith('image/')) {
+        showToast(isAr?'يجب رفع صورة فقط':'Image files only','error');
+        input.value = '';
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        document.getElementById('uploadPlaceholder').classList.add('hidden');
+        document.getElementById('uploadPreview').classList.remove('hidden');
+        document.getElementById('screenshotPreviewImg').src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+function removeScreenshot(e) {
+    e.stopPropagation();
+    document.getElementById('paymentScreenshot').value = '';
+    document.getElementById('uploadPlaceholder').classList.remove('hidden');
+    document.getElementById('uploadPreview').classList.add('hidden');
+    document.getElementById('screenshotPreviewImg').src = '';
 }
 
 // Charts
@@ -476,7 +748,8 @@ function deleteAgent(id) {
 function confirmDeleteAgent(id) {
     const d=DB.all();
     d.users=d.users.filter(u=>u.id!==id); d.clients=d.clients.filter(c=>c.agentId!==id);
-    DB.set('users',d.users); DB.set('clients',d.clients); closeModal();
+    d.payments=d.payments.filter(p=>p.agentId!==id);
+    DB.set('users',d.users); DB.set('clients',d.clients); DB.set('payments',d.payments); closeModal();
     showToast(S.lang==='ar'?'تم الحذف':'Deleted','success'); renderDashboard();
 }
 function showAddAgentModal() {
@@ -530,6 +803,7 @@ function renderAgent() {
     const d=DB.all();
     const a=S.user;
     const clients=d.clients.filter(c=>c.agentId===a.id);
+    const payments=d.payments.filter(p=>p.agentId===a.id);
     const pc=getPeriodClients(clients);
     const comm=calcComm(pc,d.settings);
     const net=d.settings.baseSalary+comm;
@@ -544,10 +818,30 @@ function renderAgent() {
         <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-wallet"></i></div><div class="stat-info"><h3>${net.toLocaleString()} ${isAr?'ج':'EGP'}</h3><p>${isAr?'صافي الراتب':'Net Salary'}</p></div></div>`;
 
     const pkgNames={free:isAr?'مجاني':'Free','10':isAr?'باقة 10':'Plan 10','25':isAr?'باقة 25':'Plan 25','60':isAr?'باقة 60':'Plan 60',unlimited:isAr?'غير محدود':'Unlimited'};
+    const methodNames={vodafone:isAr?'فودافون كاش':'Vodafone Cash',instapay:isAr?'إنستاباي':'InstaPay'};
+
     document.getElementById('myClientsBody').innerHTML = clients.length ? clients.map((c,i)=>`
         <tr><td>${i+1}</td><td>${c.name}</td><td>${c.email}</td><td>${c.phone}</td><td>${c.address}</td>
-        <td><span class="badge badge-primary">${pkgNames[c.package]||c.package}</span></td><td>${fmtDate(c.date)}</td></tr>`).join('')
-        : `<tr><td colspan="7" style="text-align:center">${isAr?'لا توجد بيانات':'No data'}</td></tr>`;
+        <td><span class="badge badge-primary">${pkgNames[c.package]||c.package}</span></td>
+        <td>${c.package==='free'?'-':(isAr?'مدفوع':'Paid')}</td>
+        <td>${fmtDate(c.date)}</td></tr>`).join('')
+        : `<tr><td colspan="8" style="text-align:center">${isAr?'لا توجد بيانات':'No data'}</td></tr>`;
+
+    // My Payments
+    document.getElementById('myPaymentsBody').innerHTML = payments.length ? payments.map((p,i)=>{
+        const statusClass = p.status==='pending'?'pending':p.status==='approved'?'approved':'rejected';
+        const statusText = p.status==='pending'?(isAr?'قيد المراجعة':'Pending'):p.status==='approved'?(isAr?'مقبول':'Approved'):(isAr?'مرفوض':'Rejected');
+        return `<tr>
+            <td>${i+1}</td>
+            <td>${p.clientName}</td>
+            <td><span class="badge badge-primary">${pkgNames[p.package]||p.package}</span></td>
+            <td>${PLAN_AMOUNTS[p.package]||0} ${isAr?'ج':'EGP'}</td>
+            <td>${methodNames[p.method]||p.method}</td>
+            <td>${p.screenshot?`<img src="${p.screenshot}" class="screenshot-thumb" onclick="viewScreenshot('${p.id}')" alt="سكرين">`:'-'}</td>
+            <td><span class="payment-status ${statusClass}"><i class="fas fa-${p.status==='pending'?'clock':p.status==='approved'?'check':'times'}"></i> ${statusText}</span></td>
+            <td>${fmtDate(p.date)}</td>
+        </tr>`;
+    }).join('') : `<tr><td colspan="8" style="text-align:center">${isAr?'لا توجد دفعات':'No payments'}</td></tr>`;
 
     // Salary
     document.getElementById('agentReportPeriod').textContent = getPeriod().label;
@@ -564,7 +858,7 @@ function renderAgent() {
         <div class="salary-card total"><h4>${isAr?'صافي الراتب':'Net'}</h4><div class="amount">${net.toLocaleString()} ${isAr?'ج':'EGP'}</div></div>`;
 }
 
-// Add Client
+// Add Client with Payment
 function addClient(e) {
     e.preventDefault();
     const name=document.getElementById('clientName').value.trim();
@@ -578,25 +872,87 @@ function addClient(e) {
     if(!validEmail(email)){showToast(isAr?'البريد غير صالح':'Invalid email','error');return false;}
     if(!validPhone(phone,cc)){showToast(isAr?'رقم الموبايل غير صحيح':'Invalid phone','error');return false;}
 
-    const d=DB.all();
     const fullPhone='+'+cc+phone;
 
-    // Duplicate check → warn admin
-    const dupEmail=d.clients.find(c=>c.email===email);
-    const dupPhone=d.clients.find(c=>c.phone===fullPhone);
-    if(dupEmail||dupPhone) {
-        const admin=d.users.find(u=>u.id===S.user.adminId);
-        if(admin) {
-            if(dupEmail) addNotif(admin.id,'warning',isAr?'بريد مكرر':'Dup Email',`${S.user.name} — ${email}`);
-            if(dupPhone) addNotif(admin.id,'warning',isAr?'موبايل مكرر':'Dup Phone',`${S.user.name} — ${fullPhone}`);
+    // Free plan - add directly
+    if (pkg === 'free') {
+        const d=DB.all();
+        const dupEmail=d.clients.find(c=>c.email===email);
+        const dupPhone=d.clients.find(c=>c.phone===fullPhone);
+        if(dupEmail||dupPhone) {
+            const admin=d.users.find(u=>u.id===S.user.adminId);
+            if(admin) {
+                if(dupEmail) addNotif(admin.id,'warning',isAr?'بريد مكرر':'Dup Email',`${S.user.name} — ${email}`);
+                if(dupPhone) addNotif(admin.id,'warning',isAr?'موبايل مكرر':'Dup Phone',`${S.user.name} — ${fullPhone}`);
+            }
         }
+        d.clients.push({id:gid(),name,email,phone:fullPhone,address,package:pkg,agentId:S.user.id,date:new Date().toISOString()});
+        DB.set('clients',d.clients);
+        showToast(isAr?'تم إضافة العميل المجاني بنجاح':'Free client added','success');
+        e.target.reset();
+        renderDashboard();
+        return false;
     }
 
-    d.clients.push({id:gid(),name,email,phone:fullPhone,address,package:pkg,agentId:S.user.id,date:new Date().toISOString()});
-    DB.set('clients',d.clients);
-    showToast(isAr?'تم إضافة العميل بنجاح':'Client added','success');
-    e.target.reset();
-    renderDashboard();
+    // Paid plan - require payment
+    const method = document.querySelector('input[name="paymentMethod"]:checked')?.value;
+    const holderName = document.getElementById('paymentHolderName').value.trim();
+    const transactionId = document.getElementById('paymentTransactionId').value.trim();
+    const screenshotInput = document.getElementById('paymentScreenshot');
+
+    if (!method) { showToast(isAr?'اختر طريقة الدفع':'Select payment method','error'); return false; }
+    if (!holderName) { showToast(isAr?'أدخل اسم صاحب الحساب':'Enter account holder name','error'); return false; }
+    if (!transactionId) { showToast(isAr?'أدخل رقم العملية':'Enter transaction ID','error'); return false; }
+    if (!screenshotInput.files[0]) { showToast(isAr?'ارفع سكرين شوت الدفع':'Upload payment screenshot','error'); return false; }
+
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+        const d=DB.all();
+
+        // Duplicate check
+        const dupEmail=d.clients.find(c=>c.email===email);
+        const dupPhone=d.clients.find(c=>c.phone===fullPhone);
+        if(dupEmail||dupPhone) {
+            const admin=d.users.find(u=>u.id===S.user.adminId);
+            if(admin) {
+                if(dupEmail) addNotif(admin.id,'warning',isAr?'بريد مكرر':'Dup Email',`${S.user.name} — ${email}`);
+                if(dupPhone) addNotif(admin.id,'warning',isAr?'موبايل مكرر':'Dup Phone',`${S.user.name} — ${fullPhone}`);
+            }
+        }
+
+        // Create payment record
+        const payment = {
+            id: gid(),
+            clientName: name,
+            clientEmail: email,
+            clientPhone: fullPhone,
+            clientAddress: address,
+            package: pkg,
+            amount: PLAN_AMOUNTS[pkg] || 0,
+            method: method,
+            holderName: holderName,
+            transactionId: transactionId,
+            screenshot: ev.target.result,
+            agentId: S.user.id,
+            adminId: S.user.adminId,
+            status: 'pending',
+            date: new Date().toISOString()
+        };
+        d.payments.push(payment);
+        DB.set('payments', d.payments);
+
+        // Notify admin
+        if (S.user.adminId) {
+            addNotif(S.user.adminId, 'info', isAr?'دفعة جديدة':'New Payment', `${S.user.name} — ${name} — ${pkg}`);
+        }
+
+        showToast(isAr?'تم إرسال الطلب. في انتظار موافقة الأدمن':'Submitted. Awaiting admin approval','success');
+        e.target.reset();
+        removeScreenshot(new Event('click'));
+        togglePaymentSection();
+        renderDashboard();
+    };
+    reader.readAsDataURL(screenshotInput.files[0]);
     return false;
 }
 
@@ -752,6 +1108,9 @@ function togglePass(id) {
 
 // ==================== INIT ====================
 function init() {
+    // Ensure default admin exists on first run
+    ensureDefaultAdmin();
+
     applyTheme();
     applyLang();
 
@@ -764,7 +1123,6 @@ function init() {
     const saved = DB.get('currentUser');
     if (saved) {
         S.user = saved;
-        // Verify user still exists
         const d = DB.all();
         const found = d.users.find(u=>u.id===saved.id);
         if (found) { S.user = found; postLogin(); }
