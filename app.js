@@ -61,11 +61,27 @@ function navigateTo(page) {
     document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
     const el = document.getElementById('page-' + page);
     if (el) { el.classList.remove('hidden'); }
-    // Render legal pages
     const legal = ['privacy','terms','refund','about','contact','adsense','googleplay','appstore'];
+    // Render legal pages
     if (legal.includes(page)) renderLegal(page);
+    // Back button for sub-pages (legal pages + dashboard pages)
+    const backEl = document.getElementById('pageBackBtn');
+    if (backEl) backEl.remove();
+    const backTarget = S.user ? (S.user.role==='admin'?'admin':'agent') : 'auth';
+    if (legal.includes(page) || page==='admin' || page==='agent') {
+        const btn = document.createElement('button');
+        btn.id = 'pageBackBtn';
+        btn.className = 'btn btn-secondary page-back-btn';
+        btn.innerHTML = `<i class="fas fa-arrow-${S.lang==='ar'?'right':'left'}"></i> <span data-ar="رجوع" data-en="Back">رجوع</span>`;
+        btn.onclick = () => {
+            if (backTarget==='auth') { navigateTo('auth'); toggleAuthMode('login'); }
+            else navigateTo(backTarget);
+        };
+        el.prepend(btn);
+    }
     // Close mobile menu
     document.getElementById('navLinks').classList.remove('open');
+    applyLang();
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -175,24 +191,25 @@ function toggleAuthMode(mode) {
     const b = document.getElementById('authBtnText');
     const l = document.getElementById('noAccountLink');
     if (mode==='login') {
-        t.textContent = S.lang==='ar'?'تسجيل الدخول':'Login';
-        s.textContent = S.lang==='ar'?'مرحباً بك في SalesHub Pro':'Welcome to SalesHub Pro';
-        b.textContent = S.lang==='ar'?'تسجيل الدخول':'Login';
-        l.textContent = S.lang==='ar'?'ليس لديك حساب؟ سجل الآن':"Don't have an account? Sign up";
+        t.dataset.ar='تسجيل الدخول'; t.dataset.en='Login';
+        s.dataset.ar='مرحباً بك في SalesHub Pro'; s.dataset.en='Welcome to SalesHub Pro';
+        b.dataset.ar='تسجيل الدخول'; b.dataset.en='Login';
+        l.dataset.ar='ليس لديك حساب؟ سجل الآن'; l.dataset.en="Don't have an account? Sign up";
         l.onclick = () => toggleAuthMode('register');
     } else if (mode==='register') {
-        t.textContent = S.lang==='ar'?'تسجيل حساب جديد':'Create Account';
-        s.textContent = S.lang==='ar'?'أنشئ حسابك':'Create your account';
-        b.textContent = S.lang==='ar'?'تسجيل':'Register';
-        l.textContent = S.lang==='ar'?'لديك حساب؟ سجل دخول':'Have an account? Login';
+        t.dataset.ar='تسجيل حساب جديد'; t.dataset.en='Create Account';
+        s.dataset.ar='أنشئ حسابك'; s.dataset.en='Create your account';
+        b.dataset.ar='تسجيل'; b.dataset.en='Register';
+        l.dataset.ar='لديك حساب؟ سجل دخول'; l.dataset.en='Have an account? Login';
         l.onclick = () => toggleAuthMode('login');
     } else {
-        t.textContent = S.lang==='ar'?'نسيت كلمة المرور':'Forgot Password';
-        s.textContent = S.lang==='ar'?'سنرسل لك رابط الاستعادة':'We will send a reset link';
-        b.textContent = S.lang==='ar'?'إرسال':'Send';
-        l.textContent = S.lang==='ar'?'العودة لتسجيل الدخول':'Back to Login';
+        t.dataset.ar='نسيت كلمة المرور'; t.dataset.en='Forgot Password';
+        s.dataset.ar='سنرسل لك رابط الاستعادة'; s.dataset.en='We will send a reset link';
+        b.dataset.ar='إرسال'; b.dataset.en='Send';
+        l.dataset.ar='العودة لتسجيل الدخول'; l.dataset.en='Back to Login';
         l.onclick = () => toggleAuthMode('login');
     }
+    applyLang(); // apply translation immediately
 }
 
 function handleAuth(e) {
@@ -298,6 +315,7 @@ function renderDashboard() {
     if (!S.user) return;
     if (S.user.role==='admin') renderAdmin();
     else renderAgent();
+    applyLang(); // re-apply translation to dynamic content
 }
 
 // ==================== ADMIN ====================

@@ -228,6 +228,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:
 .back-to-top{position:fixed;bottom:24px;right:24px;z-index:90;width:48px;height:48px;border-radius:50%;background:var(--gradient);color:#fff;border:none;font-size:1.1rem;cursor:pointer;box-shadow:var(--shadow-lg);transition:all var(--tr)}
 .back-to-top:hover{transform:translateY(-4px)}
 
+/* ===== Page Back Button ===== */
+.page-back-btn{margin-bottom:24px;display:inline-flex;gap:8px;align-items:center;font-weight:700}
+.page-back-btn i{transition:transform .3s}
+.page-back-btn:hover i{transform:translateX(4px)}
+[dir="ltr"] .page-back-btn:hover i{transform:translateX(-4px)}
+
 /* ===== Footer ===== */
 .footer{background:var(--bg-card);border-top:1px solid var(--border);margin-top:60px}
 .footer-content{display:grid;grid-template-columns:2fr 1fr 1fr;gap:40px;padding:48px 24px 24px;max-width:1200px;margin:0 auto}
