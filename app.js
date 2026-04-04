@@ -64,25 +64,19 @@ function navigateTo(page) {
     const legal = ['privacy','terms','refund','about','contact','adsense','googleplay','appstore'];
     // Render legal pages
     if (legal.includes(page)) renderLegal(page);
-    // Back button for sub-pages (legal pages + dashboard pages)
-    const backEl = document.getElementById('pageBackBtn');
-    if (backEl) backEl.remove();
-    const backTarget = S.user ? (S.user.role==='admin'?'admin':'agent') : 'auth';
-    if (legal.includes(page) || page==='admin' || page==='agent') {
-        const btn = document.createElement('button');
-        btn.id = 'pageBackBtn';
-        btn.className = 'btn btn-secondary page-back-btn';
-        btn.innerHTML = `<i class="fas fa-arrow-${S.lang==='ar'?'right':'left'}"></i> <span data-ar="رجوع" data-en="Back">رجوع</span>`;
-        btn.onclick = () => {
-            if (backTarget==='auth') { navigateTo('auth'); toggleAuthMode('login'); }
-            else navigateTo(backTarget);
-        };
-        el.prepend(btn);
-    }
     // Close mobile menu
     document.getElementById('navLinks').classList.remove('open');
     applyLang();
     window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Back to dashboard/home
+function goBack() {
+    if (S.user) {
+        navigateTo(S.user.role==='admin'?'admin':'agent');
+    } else {
+        navigateTo('auth');
+    }
 }
 
 // ==================== TOAST ====================
